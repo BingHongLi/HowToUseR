@@ -16,6 +16,6 @@ install.packages(downPkgs)
 download.packages(downPkgs,"D:/forWinSetupAllPackagesZip")
 
 #### 只下載壓縮檔，不進行安裝，Linux版本
-download.packages(downPkgs,"D:/forLinuxSetupAllPackagesTarGz")
+download.packages(downPkgs,"D:/forLinuxSetupAllPackagesTarGz",type="source")
 
 
