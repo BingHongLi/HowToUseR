@@ -1,4 +1,8 @@
-##############################################
+##############################################################################
+###
+### Revolution R Enterprise 簡易上手
+### 採智科技─李秉鴻 
+###
 ### Analysis Step
 ### 1.Specify the NameNode
 ### 2.Create a compute context for Hadoop
@@ -8,13 +12,28 @@
 ### 6.Fit a linear model to the data
 ### 7.Analyzing a Large Data Set With RevoScaleR
 ### 7-1 取得資料及上傳至hdfs
-### 
+### 7-2 設定欄位資訊 加速運算效率
+### 7-3 設定檔案來源
+### 7-4 線性迴歸
+### 7-5 Importing Data As Composite XDF Files
+### 7-6 用組合xdf檔再執行一次線性回歸
+### 7.7 Prediction on Large Data 
 ### 補充 Create a Non-waiting Compute Context(暫略)
 ### 補充 提取hdfs資料以單台電腦算
 ### 補充 在Hadoop平台上做資料清洗
-##############################################
+### 補充 將xdf檔轉為csv
+###
+### 部份內容節錄自Revolution R Enterprise 範例
+##################################################################################
+
+### 1.Specify the NameNode
+
+# 詳閱簡報及上課內容
+
+##################################################################################
  
-### Create a compute context for hadoop
+### 2.Create a compute context for hadoop
+
 # RRE客戶端可透過本機RRE，並透過SSH協定去連線至Hadoop叢集其中一台node的RRE，
 # 以該node去跟叢集進行溝通，使用叢集資源進行運算。
 # 連入node之前，必須先確認客戶端是否有下載Putty，若無請上網進行下載
@@ -45,7 +64,10 @@ myHadoopCluster <- RxHadoopMR(
 # 告訴RRE 他必須要計算的ComputeContext為myHadoopCluster
 rxSetComputeContext(myHadoopCluster)
 
-# Copying a Data File into the Hadoop Distributed File System
+#################################################################################
+
+### 3.Copying a Data File into the Hadoop Distributed File System
+
 # 為了要達到分散運算，把資料存入Hdfs為必要的動作
 # 此處可設定把node的native File System 內的檔案copy進入HDFS，
 # 亦可從客戶端將檔案傳入node，再由node傳入HDFS
@@ -69,7 +91,7 @@ rxHadoopListFiles(bigDataDirRoot)
 # 標記native system檔案位置
 # source <- system.file("SampleData/AirlineDemoSmall.csv",package="RevoScaleR")
 # 預設檔案存放路徑
-# inputDir <- file.path(bigDataDirRoot,"AirlineDemoSmall")
+inputDir <- file.path(bigDataDirRoot,"AirlineDemoSmall")
 # 在Hdfs依照剛預設的路徑建立資料夾
 # rxHadoopMakeDir(inputDir)
 # 把nativeFileSystem的file複製進Hdfs
@@ -78,9 +100,10 @@ rxHadoopListFiles(bigDataDirRoot)
 # 查閱Hdfs內/share資料夾下的檔案
 # rxHadoopListFiles(inputDir)
 
-###########################################################
+##########################################################################
 
-### Creating a Data Source
+### 4.Creating a Data Source
+
 # RRE預設會先搜尋local端的nativeFileSystem，
 # 若要RRE預設去找其他檔案系統的話可使用rxSetFileSystem()
 # 此處使用另外一種方式，計算或執行其他動作時，再指定要尋找的fileSystem
@@ -105,35 +128,35 @@ airDS <- RxTextData(
 	colInfo=colInfo,
 	fileSystem=hdfsFS
 	)
-###############################################
+###########################################################################
 
-### Summarizing Your Data
+### 5.Summarizing Your Data
+
 # 對資料做敘述性統計
 adsSummary<-rxSummary(~ArrDelay+CRSDepTime+DayOfWeek,data=airDS)
 adsSummary
 
-###############################################
+###########################################################################
 
-### Fitting a Linear Model
+### 6.Fitting a Linear Model
 
 arrDelayLm1 <-rxLinMod(ArrDelay~DayOfWeek,data=airDS)
 summary(arrDelayLm1)
 
-###############################################
-
-### Create a Non-Waiting Compute Context
-
-
-
-###############################################
+###########################################################################
 
 ### 7-1 取得資料及上傳至hdfs
+
 # 先去下載下面網頁的所有資料
 # http://packages.revolutionanalytics.com/datasets/AirOnTimeCSV2012/
 # 下載好，放入hdfs內的/share/airOnTime12/CSV，不會放，請參考簡報。
 
-airDataDir <- file.path(bigDataDirRoot,"/airOnTime12/CSV")
+###########################################################################
+
 ### 7-2 設定欄位資訊 加速運算效率
+
+airDataDir <- file.path(bigDataDirRoot,"/airOnTime12/CSV")
+
 airlineColInfo <- list(
 	MONTH = list(newName = "Month", type = "integer"),
 	DAY_OF_WEEK = list(
@@ -214,8 +237,12 @@ airlineColInfo <- list(
 			"2000-2249", "2250-2499", ">= 2500")
 		)
 	) 
+
+#####################################################################
+
+### 7-3 設定檔案來源
+
 varNames<-names(airlineColInfo)
-# 7-3 設定檔案來源
 hdfsFS<-RxHdfsFileSystem()
 bigAirDS<-RxTextData(
 	airDataDir,
@@ -223,7 +250,11 @@ bigAirDS<-RxTextData(
 	varsToKeep=varNames,
 	fileSystem=hdfsFS
 	)
-# 7-4 線性迴歸
+
+#####################################################################
+
+### 7-4 線性迴歸
+
 # 建模並紀錄花費時間
 system.time(
 	delayArr<-rxLinMod(
@@ -234,11 +265,16 @@ system.time(
 	)
 summary(delayArr)
 
-# 7-5 Importing Data As Composite XDF Files
+#####################################################################
+
+### 7-5 Importing Data As Composite XDF Files
+
 # 在RRE，推薦使用的檔案格式為xdf，可提升資料在硬碟與記憶體間的交換速度
 # 詳見簡報的介紹，在Hadoop把檔案存為xdf格式，會是以set的方式儲存，副檔名為xdfd與xdfm
 # xdfm為名冊，讓系統知道檔案在哪個節點上。
 # 現在示範把多個csv檔轉為一個Composite Xdf File
+# rowsPerRead為每一個BLOCK要存放多少筆資料
+# numRows為要讀取多少行資料，-1為全讀。
 bigAirXdfName<-"/user/RevoShare/cloudera/AirlineOnTime2012"
 airData<-RxXdfData(bigAirXdfName,fileSystem=hdfsFS)
 blockSize<-250000
@@ -251,7 +287,9 @@ rxImport(
 	numRows=numRowsToRead
 	)
 
-# 7-6 用組合xdf檔再執行一次線性回歸
+#####################################################################
+
+### 7-6 用組合xdf檔再執行一次線性回歸
 system.time(
 	delayArr<-rxLinMod(
 		ArrDelay~DayOfWeek,
@@ -262,7 +300,11 @@ system.time(
 print(
 	summary(delayArr)
 	)
+
+#####################################################################
+
 ### 7.7 Prediction on Large Data
+
 # 一般會將分析資料切成三份(建模、調整、測試)或兩份(建模、測試)
 # modelObject 為 用來預測的模型，data為要用來生成預測結果的data
 rxPredict(
@@ -270,6 +312,7 @@ rxPredict(
 	data=airData,
 	overwrite=T
 	)
+
 # 請注意 使用rxPredict，輸入資料可為csv檔，
 # 但輸出資料必定為xdf格式，故如果希望將rxPredict的結果output出去，
 # 請在rxPrexdict函數內加進outData參數，並且outData參數所接收的物件必須為RxXdfData物件
@@ -282,9 +325,60 @@ rxPredict(
 #	overwrite=T
 #	)
 
-###############################################
+####################################################################
 
-# 補充,有時資料量並不是很大，用分散運算，速度反而比從HDFS提取資料到本機端做運算來得慢
+### 補充 Create a Non-waiting Compute Context
+
+# 可把工作丟到後端去執行，讓你的RSession仍可繼續給你使用
+
+# 設定ComputeContext
+myNoWaitJobCC <- RxHadoopMR(
+	hdfsShareDir=myShareDir,
+	shareDir=myShareDir,
+	sshUsername=mySshUsername,
+	sshHostname=mySshHostname,
+	sshClientDir="D:\\putty",
+	wait=F
+	)
+rxSetComputeContext(myNoWaitJobCC)
+
+# 設定檔案來源
+bigAirXdfName<-"/user/RevoShare/cloudera/AirlineOnTime2012"
+hdfsFS<-RxHdfsFileSystem() 
+myNoWaitXdfSource<-RxXdfData(
+	bigAirXdfName,
+	fileSystem=hdfsFS
+	)
+
+# 設定工作
+getInfoJob<-rxGetInfo(myNoWaitXdfSource,getVarInfo=T,numRows=6)
+
+# 取得工作狀況，running是還在進行，finished是已經完成。
+rxGetJobStatus(getInfoJob)
+
+# 取得工作結果，如果工作尚未結束，會報錯誤訊息
+rxGetJobResults(getInfoJob)
+
+# 如果在設定工作項目時，忘記assign一個變數(例：getInfoJob)紀錄Job
+# 可用 rxgLastPendingJob接回最後一個執行的job
+forgetAssign<-rxgLastPendingJob
+rxGetJobStatus(forgetAssign)
+
+# 用太多用太爽，正常Job執行完成後，都會清除暫存，
+# 但如果是被執行中斷的或沒有完全收集到結果的，暫存就變成了垃圾，此刻請清理Job
+# 先設定要清除的範圍或單一job
+myJobs<-rxGetJobs(
+	myNoWaitJobCC,
+	startTime=as.POSIXct("2014/12/5 16:30"),
+	endTime=as.POSIXct("2014/12/5 17:20")
+	)
+rxCleanupJobs(myJobs)
+
+
+####################################################################
+
+### 補充,有時資料量並不是很大，用分散運算，速度反而比從HDFS提取資料到本機端做運算來得慢
+
 # 以下範例為從hdfs提取資料進本端作運算
 rxSetComputeContext("local")
 inputFile<-file.path(bigDataDirRoot,"AirlineDemoSmall/AirlineDemoSmall.csv")
@@ -293,17 +387,31 @@ adsSummary<-rxSummary(~ArrDelay+CRSDepTime+DayOfWeek,data=airDSLocal)
 adsSummary
 rxSetComputeContext(myHadoopCluster)
 
-###############################################
+############################################################################
 
 ### 補充 在Hadoop平台上做資料清洗
-# 對資料作清洗，刪除不要的欄位或有時使用rxPredict()函數沒指定outData，此時預測後的結果會複寫至原資料
-# 若不想要預測後的結果殘留在原資料上，亦可使用此步驟
 
-newAirDir<-"/user/RevoShare/cloudera/newAirData"
-newAirXdf<-RxXdfData(newAirDir,fileSystem=hdfsFS)
+# 對資料作清洗，刪除不要的欄位或有時使用rxPredict()函數沒指定outData，
+# 此時預測後的結果會複寫至原資料，若不想要預測後的結果殘留在原資料上，亦可使用此步驟
+
+#newAirDir<-"/user/RevoShare/cloudera/newAirData"
+#newAirXdf<-RxXdfData(newAirDir,fileSystem=hdfsFS)
+#rxDataStep(
+#	inData=airData,
+#	outFile=newAirXdf,
+#	varsToDrop=c("ArrDel15_Pred","ArrDel15_Resid"),
+#	rowSelection=!is.na(ArrDelay)&(DepDelay>-60)
+#	)
+
+############################################################################
+
+### 將xdf檔轉為csv檔
+
+# 有些人可能想要交換數據，此刻必須轉回csv，請參考以下範例
+
+giveMeCSV<-RxTextData(file="iAmCSV.csv")
+putXdf<-RxXdfData(file="nowExist.xdf")
 rxDataStep(
-	inData=airData,
-	outFile=newAirXdf,
-	varsToDrop=c("ArrDel15_Pred","ArrDel15_Resid"),
-	rowSelection=!is.na(ArrDelay)&(DepDelay>-60)
+	inData=putXdf,
+	outFile=giveMeCSV
 	)
