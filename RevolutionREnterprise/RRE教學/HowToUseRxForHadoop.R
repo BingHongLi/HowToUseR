@@ -45,7 +45,7 @@
 # 欲連線的node之使用者帳號
 mySshUsername<-"cloudera"
 # 存在putty內的session名稱
-mySshHostname<-"CDH4.7Cluster"
+mySshHostname<-"CDH4.7SingleNode"
 # 在node本地端那邊供RRE存取的資料夾路徑，請勿更動此行
 myShareDir <- paste("/var/RevoShare",mySshUsername,sep="/")
 # 在hdfs供RRE存取的資料夾路徑，請勿更動此行
@@ -54,7 +54,7 @@ myHdfsShareDir <-paste("/user/RevoShare",mySshUsername,sep="/")
 # 新增一個ComputeContext，忘記參數內容請自己上Rdocument查，對自己有好處，可了解該函數
 # sshClientDir 請設定你putty的儲存路徑
 myHadoopCluster <- RxHadoopMR(
-	hdfsShareDir=myShareDir,
+	hdfsShareDir=myHdfsShareDir,
 	shareDir=myShareDir,
 	sshUsername=mySshUsername,
 	sshHostname=mySshHostname,
