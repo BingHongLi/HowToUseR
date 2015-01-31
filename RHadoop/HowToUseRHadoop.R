@@ -3,23 +3,37 @@
 ###
 # Set system variable
 Sys.setenv(HADOOP_CMD="/usr/bin/hadoop")
-Sys.setenv(HADOOP_STREAMING="/opt/cloudera/parcels/CDH-5.0.0-1.cdh5.0.0.p0.47/lib/hadoop-mapreduce/hadoop-streaming.jar")
+Sys.setenv(HADOOP_STREAMING="/usr/lib/hadoop-0.20-mapreduce/contrib/streaming/hadoop-streaming.jar")
+Sys.setenv(JAVA_HOME="/usr/java/jdk1.7.0_67-cloudera")
 
-library(rmr2)
+library(rJava)
 library(rhdfs)
+library(rmr2)
+library(ravro)
+
+# wordcount
 hdfs.init()
-hdfs.mkdir('/user/cloudera/wordcount/data')
-hdfs.put('fileName.txt','/user/cloudera/wordcount/data')
+hdfs.mkdir("/user/cloudera/wordcount")
+hdfs.ls("/")
+srcPath <- file.path("data/","wordcount.txt")
+hdfs.put(srcPath,dest="/user/cloudera/wordcount/",dstFS=hdfs.defaults("fs"))
+hdfs.ls("/user/cloudera/wordcount")
 
-wordCount <- function(input,output=NULL,pattern=''){
-  wc.map=function(.,lines){
+text <- "/user/cloudera/wordcount/wordcount.txt"
+
+test <- mapreduce(
+  input=text,
+  input.format="text",
+  map=function(k,v){
+    
     keyval(
-      unlist(strsplit(x=lines,split=pattern)),
-      1
-    )
+      unlist(
+          strWord <- strsplit(x=tolower(v),split=" ")),1)
+  },reduce=function(k,v){
+    keyval(k,sum(v))
   }
-  w.reduce=function(word,counts){
-    keyval(word,sum(counts))
-  }
-}
+)
 
+result <- from.dfs(test)
+
+View(result)
