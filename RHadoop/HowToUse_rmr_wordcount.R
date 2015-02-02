@@ -10,11 +10,11 @@ Sys.setenv(JAVA_HOME="/usr/java/jdk1.7.0_67-cloudera")
 
 library(rJava)
 library(rhdfs)
+hdfs.init()
 library(rmr2)
 library(ravro)
 
 # wordcount
-hdfs.init()
 hdfs.mkdir("/user/cloudera/wordcount")
 hdfs.ls("/")
 srcPath <- file.path("data/","wordcount.txt")
@@ -61,7 +61,6 @@ for(i in step3 ){
 
 resultDF<- arrange(resultDF,word)
 #############################################
-
 # 針對mtcars$mpg 做平均與變異數值
 
 meanSource <- to.dfs(mtcars$mpg)
@@ -95,15 +94,3 @@ from.dfs(rmrVariance)
 
 mean(mtcars$mpg)
 var(mtcars$mpg)
-##########################################
-
-# SQL Join
-
-# 查出reviews.id == solutions.id 的資料列 
-solutions <- read.csv(file="./data/solutions.csv",header=T)
-reviews <- read.csv(file="data/reviews.csv",header=T)
-str(solutions)
-str(reviews)
-
-# R 的解決辦法 merge
-rJoin <- merge(solutions,reviews,by.x="id",by.y="id",all=T)
